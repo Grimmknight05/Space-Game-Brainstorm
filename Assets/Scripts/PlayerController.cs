@@ -62,7 +62,11 @@ public class PlayerController : MonoBehaviour
     /*Look*/
     [SerializeField] private float mouseSensitivity = 100.0f;
     [SerializeField] private Transform cameraPivot; // assign your camera (or empty parent)
+    [SerializeField] private float maxPitch = 80f;
+    [SerializeField] private float smooth = 10f;
+    private float currentPitch;
     private float xRotation = 0.0f;
+    private Vector3 cachedMoveDirection;
     private Vector2 lookInput;
 
     private PlayerInput playerInput;
@@ -82,11 +86,12 @@ public class PlayerController : MonoBehaviour
         Cursor.visible = false;
     }
     /*Input Events*/
+    /*
     void OnLook(InputValue value)//On axis movement
     {
         lookInput = value.Get<Vector2>();//get input
     }
-
+    */
     void OnMove(InputValue movementValue)//On any movement?
     {
         Vector2 movementVector = movementValue.Get<Vector2>();//Getting movement direction from movementValue param, and set it to Vector2 movementVector; (x,y)
@@ -102,14 +107,21 @@ public class PlayerController : MonoBehaviour
         }
     }
     /*Movement*/
+    /*
     void look()
     {
-        Vector2 mouseDelta = lookInput * mouseSensitivity * Time.deltaTime; //Input * sense over time
-        transform.Rotate(Vector3.up * mouseDelta.x);//yaw player
-        xRotation -= mouseDelta.y;//Pitch only cam
-        xRotation = Mathf.Clamp(xRotation, -80f, 80f);
-        cameraPivot.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
-    }
+        Vector2 mouseDelta = lookInput * mouseSensitivity;
+
+        // Yaw (body rotation)
+        transform.Rotate(Vector3.up * mouseDelta.x);
+
+        // Pitch (camera rotation)
+        xRotation -= mouseDelta.y;
+        xRotation = Mathf.Clamp(xRotation, -maxPitch, maxPitch);
+        currentPitch = Mathf.Lerp(currentPitch, xRotation, Time.deltaTime * smooth);
+        cameraPivot.localRotation = Quaternion.Euler(currentPitch, 0f, 0f);
+    }   
+    */
     void jump()//call on input to jump
     {
         //Ground jump logic
@@ -215,16 +227,9 @@ public class PlayerController : MonoBehaviour
     /*Update*/
     void FixedUpdate()//Fixed interval update ensures physics is consistant regaurdless of framerate
     {
-        Vector3 forward = cameraPivot.forward;
-        Vector3 right = cameraPivot.right;
 
-        forward.y = 0f;
-        right.y = 0f;
-
-        forward.Normalize();
-        right.Normalize();
-
-        Vector3 movement = forward * moveY + right * moveX;
+        Vector3 movement = cachedMoveDirection;
+        
         switch (moveMode)
         {
             case movementMode.ForceBased:
@@ -245,6 +250,8 @@ public class PlayerController : MonoBehaviour
                 if (movement.sqrMagnitude > 1f) //Normalize to limit faster diagonal movement
                     movement.Normalize();
 
+
+
                 Vector3 targetVelocity = movement * playerSpeed; //find target velocity
                 targetVelocity.y = rb.linearVelocity.y;//keep y velocity uneffected
 
@@ -259,6 +266,7 @@ public class PlayerController : MonoBehaviour
                 horizontal = Vector3.ClampMagnitude(horizontal, playerSpeed);
 
                 rb.linearVelocity = new Vector3(horizontal.x, avelocity.y, horizontal.z); //set velocity
+                
                 break;
         }
         
@@ -266,6 +274,17 @@ public class PlayerController : MonoBehaviour
     }
     void Update()
     {
-        look();
+        //look();
+
+        Vector3 forward = cameraPivot.forward;
+        Vector3 right = cameraPivot.right;
+
+        forward.y = 0f;
+        right.y = 0f;
+
+        forward.Normalize();
+        right.Normalize();
+
+        cachedMoveDirection = forward * moveY + right * moveX;
     }
 }
