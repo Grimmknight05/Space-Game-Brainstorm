@@ -58,3 +58,7 @@ Handles player movement, jumping, camera look, scoring, UI, and interactions usi
 ```csharp
 OnScoreChanged(int newScore)
 OnPlayerDeath()
+
+## planets
+
+I made some custom plants in blender and textured them in substance painter
